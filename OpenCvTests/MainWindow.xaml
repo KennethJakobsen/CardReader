@@ -1,0 +1,53 @@
+﻿<Window x:Class="OpenCvTests.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:OpenCvTests"
+        mc:Ignorable="d"
+        Title="MainWindow" Height="479.258" Width="861.719" Loaded="Window_Loaded">
+    <Grid>
+        <Button x:Name="Load_Image" Content="Load Image" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="75" Click="Load_Image_Click"/>
+        <TabControl x:Name="tabControl" Margin="10,35,10,10">
+            <TabItem Header="Original">
+                <Image x:Name="imgOriginal"/>
+            </TabItem>
+            <TabItem Header="Modified">
+                <Grid Background="#FFE5E5E5">
+                    <Image x:Name="imgModified"/>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Cards" x:Name="tabCards">
+                <Grid Background="#FFE5E5E5">
+                    <ListView x:Name="lstCards" FlowDirection="LeftToRight" >
+                        <ListView.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Width="{Binding (FrameworkElement.ActualWidth), 
+                                       RelativeSource={RelativeSource AncestorType=ScrollContentPresenter}}"
+                ItemWidth="250"
+                MinWidth="{Binding ItemWidth, RelativeSource={RelativeSource Self}}"
+                ItemHeight="250" />
+                            </ItemsPanelTemplate>
+                        </ListView.ItemsPanel>
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <Image Source="{Binding}" HorizontalAlignment="Left" VerticalAlignment="Top"></Image>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </Grid>
+            </TabItem>
+        </TabControl>
+        <TextBox x:Name="txtBlur" HorizontalAlignment="Left" Height="20" Margin="558,11,0,0" TextWrapping="Wrap" VerticalAlignment="Top" Width="24" KeyUp="txtBlur_KeyUp" />
+        <Label x:Name="label" Content="Blur" HorizontalAlignment="Left" Margin="522,7,0,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="txtTMax" Height="20" Margin="0,12,10,0" TextWrapping="Wrap" VerticalAlignment="Top" TextChanged="txtTMax_TextChanged" HorizontalAlignment="Right" Width="42"  />
+        <Label x:Name="label_Copy" Content="t_max" HorizontalAlignment="Right" Margin="0,7,52,0" VerticalAlignment="Top"/>
+        <TextBox x:Name="txtTMin" Height="20" Margin="0,11,87,0" TextWrapping="Wrap" VerticalAlignment="Top" TextChanged="txtTMin_TextChanged" HorizontalAlignment="Right" Width="38"  />
+        <Label x:Name="label_Copy1" Content="tmin" Margin="0,7,125,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="34"/>
+        <TextBox x:Name="txtPerspective" Height="20" Margin="0,11,167,0" TextWrapping="Wrap" VerticalAlignment="Top" HorizontalAlignment="Right" Width="30" TextChanged="txtPerspective_TextChanged"  />
+        <Label x:Name="label_Copy2" Content="Perspective" Margin="0,7,197,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="71"/>
+        <TextBox x:Name="txtNumCards" Height="20" Margin="0,10,654,0" TextWrapping="Wrap" VerticalAlignment="Top" HorizontalAlignment="Right" Width="30" TextChanged="txtNumCards_TextChanged"  />
+        <Label x:Name="label_Copy3" Content="Num cards" Margin="0,6,684,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="71"/>
+
+    </Grid>
+</Window>
