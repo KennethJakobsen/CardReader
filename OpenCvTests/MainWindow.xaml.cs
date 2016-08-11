@@ -6,10 +6,12 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using AForge.Video.DirectShow;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
@@ -23,6 +25,13 @@ namespace OpenCvTests
     /// </summary>
     public partial class MainWindow : Window
     {
+        #region Camera Capture Variables
+        private Capture _capture = null; //Camera
+        private bool _captureInProgress = false; //Variable to track camera state
+        int CameraDevice = 0; //Variable to track camera device selected
+        FilterInfoCollection WebCams; //List containing all the camera available
+        #endregion
+
         private string _localPath = string.Empty;
         private int _blur = 1;
         private int _threshMin = 175;
@@ -40,28 +49,54 @@ namespace OpenCvTests
         public MainWindow()
         {
             InitializeComponent();
+            WebCams = new FilterInfoCollection(FilterCategory.VideoInputDevice);
+            _capture = new Capture(CameraDevice);
+            _capture.ImageGrabbed += ProcessFrame;
+
+        }
+
+        private void ProcessFrame(object sender, EventArgs arg)
+        {
+            //***If you want to access the image data the use the following method call***/
+            //Image<Bgr, Byte> frame = new Image<Bgr,byte>(_capture.RetrieveBgrFrame().ToBitmap());
         }
 
         private void Load_Image_Click(object sender, RoutedEventArgs e)
         {
-            var dlg = new OpenFileDialog();
+            //var dlg = new OpenFileDialog();
 
 
-            if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-                _localPath = dlg.FileName;
+            //if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            //    _localPath = dlg.FileName;
 
 
-            ProcessImage();
+            ProcessImage(_capture.QueryFrame());
         }
 
-        private void ProcessImage()
+        private void ProcessImage(Mat mat = null)
         {
-            if (_localPath == string.Empty) return;
-            BindOriginal(_localPath);
+            if (_localPath != string.Empty)
+            {
+                _img = CvInvoke.Imread(_localPath, LoadImageType.AnyColor);
+                BindOriginal(_img);
+            }
+            else
+            {
+                if (mat != null)
+                {
+                    _img = mat;
+                    BindOriginal(mat);
+                }
+                else
+                {
+                    return;
+                }
+            }
+            
 
             VectorOfVectorOfPoint contours;
             Mat matContours;
-            _img = PreProcess(_localPath, out contours, out matContours);
+            _img = PreProcess(_img, out contours, out matContours);
             var lst = new List<Mat>();
             foreach (var c in listCountours(contours).OrderByDescending(c => c.Size).Take(_numcards).OrderBy(c => c.Box.X).ThenBy(c => c.Box.Y))
             {
@@ -72,9 +107,9 @@ namespace OpenCvTests
             BindModified(matContours);
         }
 
-        private Mat PreProcess(string localPath, out VectorOfVectorOfPoint contours, out Mat matContours)
+        private Mat PreProcess(Mat img, out VectorOfVectorOfPoint contours, out Mat matContours)
         {
-            var img = CvInvoke.Imread(localPath, LoadImageType.AnyColor);
+            
             var gray = GetMat(img);
             CvInvoke.CvtColor(img, gray, ColorConversion.Bgr2Gray);
             var blur = GetMat(img);
@@ -161,6 +196,14 @@ namespace OpenCvTests
             bmpMod.EndInit();
             imgModified.Source = bmpMod;
         }
+        private void BindOriginal(Mat gray)
+        {
+            var bmpMod = new BitmapImage();
+            bmpMod.BeginInit();
+            bmpMod.StreamSource = new MemoryStream(ImageToByte(gray.Bitmap));
+            bmpMod.EndInit();
+            imgOriginal.Source = bmpMod;
+        }
         private void BindList(IEnumerable<Mat> materials)
         {
             var lst = new ObservableCollection<ImageSource>();
@@ -208,6 +251,7 @@ namespace OpenCvTests
             txtBlur.Text = _blur.ToString();
             txtPerspective.Text = _perspective.ToString();
             txtNumCards.Text = _numcards.ToString();
+            _capture.Start();
         }
 
         private void txtPerspective_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
