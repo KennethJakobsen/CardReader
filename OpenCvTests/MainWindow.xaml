@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:OpenCvTests"
-        xmlns:Properties="clr-namespace:OpenCvTests.Properties" x:Class="OpenCvTests.MainWindow"
+        xmlns:local="clr-namespace:EmguCvTests"
+        xmlns:Properties="clr-namespace:EmguCvTests.Properties" x:Class="EmguCvTests.MainWindow"
         mc:Ignorable="d"
         Title="MainWindow" Height="479.258" Width="861.719" Loaded="Window_Loaded">
     <Grid>
@@ -24,9 +24,7 @@
                         <ListView.ItemsPanel>
                             <ItemsPanelTemplate>
                                 <WrapPanel Width="{Binding (FrameworkElement.ActualWidth), RelativeSource={RelativeSource AncestorType={x:Type ScrollContentPresenter}}}"
-									ItemWidth="250"
-									MinWidth="{Binding ItemWidth, RelativeSource={RelativeSource Self}}"
-									ItemHeight="250" />
+									ItemWidth="150" />
                             </ItemsPanelTemplate>
                         </ListView.ItemsPanel>
                         <ListView.ItemTemplate>

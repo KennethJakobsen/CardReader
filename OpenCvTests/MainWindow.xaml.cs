@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
 using System.IO;
@@ -18,7 +19,7 @@ using Emgu.CV.Structure;
 using Emgu.CV.Util;
 using Size = System.Drawing.Size;
 
-namespace OpenCvTests
+namespace EmguCvTests
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
@@ -41,6 +42,7 @@ namespace OpenCvTests
         private Mat _img;
         public bool UseWebCam = false;
         public Image<Bgr, byte> Debug;
+        private int cardCount = 0;
         public class VectorOrder
         {
             public int ListIndex { get; set; }
@@ -104,14 +106,40 @@ namespace OpenCvTests
             Mat matContours;
             _img = PreProcess(_img, out contours, out matContours);
             var lst = new List<Mat>();
-            foreach (var c in listCountours(contours).OrderByDescending(c => c.Size).Take(_numcards).OrderBy(c => c.Box.X).ThenBy(c => c.Box.Y))
+            var potentialCards = listCountours(contours)
+                .Where(c => IsRectangle(c.Vector))
+                .OrderByDescending(c => c.Size);
+            var largestCard = potentialCards.First();
+
+            var cards = potentialCards
+                    .Where(c => IsAcceptableSize(c.Size, 10, largestCard.Size))
+                    //.Take(52)
+                    .OrderBy(c => c.Box.X + c.Box.Y)
+                    .ToArray();
+            for(var i = 0; i < cards.Length; i++)
             {
-                lst.Add(RectifyCardFromWarpedPerspective(c, _img));
-                CvInvoke.DrawContours(matContours, contours, c.ListIndex, new MCvScalar(0, 255, 0), 3);
+                cardCount = i;
+                lst.Add(RectifyCardFromWarpedPerspective(cards[i], _img));
+                CvInvoke.DrawContours(matContours, contours, cards[i].ListIndex, new MCvScalar(0, 255, 0), 3);
             }
+            cardCount = 0;
             BindOriginal(Debug.Bitmap);
             BindList(lst);
             BindModified(matContours);
+        }
+
+        private bool IsAcceptableSize(double size, int percentageDiff, double max)
+        {
+            return ((max/100)*(100 - percentageDiff)) <= size;
+        }
+
+        private bool IsRectangle(VectorOfPoint c)
+        {
+            var approxContour = new VectorOfPoint();
+            CvInvoke.ApproxPolyDP(c, approxContour, CvInvoke.ArcLength(c, true)*0.05, true);
+            var area = CvInvoke.ContourArea(approxContour, false);
+            if (!(area > 250)) return false;
+            return approxContour.Size == 4;
         }
 
         private Mat PreProcess(Mat img, out VectorOfVectorOfPoint contours, out Mat matContours)
@@ -125,8 +153,6 @@ namespace OpenCvTests
             CvInvoke.Threshold(blur, threshold, _threshMin, _threshMax, ThresholdType.Binary);
             var eqHist = GetMat(img);
             CvInvoke.EqualizeHist(threshold, eqHist);
-            var im = eqHist.ToImage<Bgr, byte>();
-            im._GammaCorrect(1.8);
             contours = new VectorOfVectorOfPoint();
             CvInvoke.FindContours(threshold, contours, null, RetrType.Tree, ChainApproxMethod.ChainApproxSimple);
             matContours = GetMat(img);
@@ -148,8 +174,8 @@ namespace OpenCvTests
             var points = new PointF[4];
             points[0] = new PointF(0, 0);
             points[1] = new PointF(499, 0);
-            points[2] = new PointF(499, 499);
-            points[3] = new PointF(0, 499);
+            points[2] = new PointF(499, 750);
+            points[3] = new PointF(0, 750);
             
             var pArr = polyDp.ToArray();
             var old = new PointF[4];
@@ -158,27 +184,25 @@ namespace OpenCvTests
             old[3] = pArr.OrderBy(p => p.X - p.Y).First();
             old[1] = pArr.OrderByDescending(p => p.X - p.Y).First();
 
-            for(var i = 0; i < old.Length; i++)
-            {
-                Debug.Draw($"{i}", convertToPoints(old)[i], FontFace.HersheyPlain, 3, new Bgr(0, 0, 0), 2);
-            }
+            
+            Debug.Draw(cardCount.ToString(), convertToPoints(old)[3], FontFace.HersheyPlain, 5, new Bgr(0, 0, 0), 8);
             
             Debug.DrawPolyline(convertToPoints(old), true, new Bgr(0,0,0),3);
             
             var transform = CvInvoke.GetPerspectiveTransform(old, points);
             
             var warp = GetMat(img);
-            CvInvoke.WarpPerspective(img, warp, transform, new Size(499,499));
+            CvInvoke.WarpPerspective(img, warp, transform, new Size(499,750));
             return warp;
         }
 
         private List<VectorOrder> listCountours(VectorOfVectorOfPoint contours)
         {
-            var lst = new List<VectorOrder>();
+            var lst = new List<MainWindow.VectorOrder>();
             for (var i = 0; i < contours.Size; i++)
             {
                 
-                lst.Add(new VectorOrder
+                lst.Add(new MainWindow.VectorOrder
                 {
                     Size = CvInvoke.ContourArea(contours[i]),
                     ListIndex = i,
