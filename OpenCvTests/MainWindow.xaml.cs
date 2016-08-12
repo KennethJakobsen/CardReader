@@ -39,6 +39,8 @@ namespace OpenCvTests
         private double _perspective = 0.02;
         private int _numcards = 2;
         private Mat _img;
+        public bool UseWebCam = false;
+        public Image<Bgr, byte> Debug;
         public class VectorOrder
         {
             public int ListIndex { get; set; }
@@ -63,21 +65,25 @@ namespace OpenCvTests
 
         private void Load_Image_Click(object sender, RoutedEventArgs e)
         {
-            //var dlg = new OpenFileDialog();
-
-
-            //if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            //    _localPath = dlg.FileName;
-
-
-            ProcessImage(_capture.QueryFrame());
+            if (!UseWebCam)
+            {
+                var dlg = new OpenFileDialog();
+                if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                    _localPath = dlg.FileName;
+                ProcessImage();
+            }
+            else
+            {
+                ProcessImage(_capture.QueryFrame());
+            }
         }
 
         private void ProcessImage(Mat mat = null)
         {
-            if (_localPath != string.Empty)
+            if (_localPath != string.Empty && !UseWebCam)
             {
                 _img = CvInvoke.Imread(_localPath, LoadImageType.AnyColor);
+                Debug = new Image<Bgr, byte>(_img.Bitmap);
                 BindOriginal(_img);
             }
             else
@@ -103,6 +109,7 @@ namespace OpenCvTests
                 lst.Add(RectifyCardFromWarpedPerspective(c, _img));
                 CvInvoke.DrawContours(matContours, contours, c.ListIndex, new MCvScalar(0, 255, 0), 3);
             }
+            BindOriginal(Debug.Bitmap);
             BindList(lst);
             BindModified(matContours);
         }
@@ -143,14 +150,20 @@ namespace OpenCvTests
             points[1] = new PointF(499, 0);
             points[2] = new PointF(499, 499);
             points[3] = new PointF(0, 499);
-
+            
             var pArr = polyDp.ToArray();
             var old = new PointF[4];
-            old[2] = pArr.OrderBy(p => p.X).First();
-            old[0] = pArr.OrderByDescending(p => p.X).First();
-            old[3] = pArr.OrderBy(p => p.Y).First();
-            old[1] = pArr.OrderByDescending(p => p.Y).First();
+            old[0] = pArr.OrderBy(p => p.X + p.Y).First();
+            old[2] = pArr.OrderByDescending(p => p.X + p.Y).First();
+            old[3] = pArr.OrderBy(p => p.X - p.Y).First();
+            old[1] = pArr.OrderByDescending(p => p.X - p.Y).First();
 
+            for(var i = 0; i < old.Length; i++)
+            {
+                Debug.Draw($"{i.ToString()}", convertToPoints(old)[i], FontFace.HersheyPlain, 4, new Bgr(0, 0, 255), 2);
+            }
+            
+            Debug.DrawPolyline(convertToPoints(old), true, new Bgr(0,0,0),3);
             
             var transform = CvInvoke.GetPerspectiveTransform(old, points);
             
@@ -174,6 +187,16 @@ namespace OpenCvTests
                 });
             }
             return lst;
+        }
+
+        private System.Drawing.Point[] convertToPoints(PointF[] old)
+        {
+            var p = new System.Drawing.Point[old.Length];
+            for (var i = 0; i < old.Length; i++)
+            {
+                p[i] = new System.Drawing.Point(Convert.ToInt32(old[i].X), Convert.ToInt32(old[i].Y));
+            }
+            return p;
         }
         private static Mat GetMat(Mat img)
         {
@@ -201,6 +224,14 @@ namespace OpenCvTests
             var bmpMod = new BitmapImage();
             bmpMod.BeginInit();
             bmpMod.StreamSource = new MemoryStream(ImageToByte(gray.Bitmap));
+            bmpMod.EndInit();
+            imgOriginal.Source = bmpMod;
+        }
+        private void BindOriginal(Bitmap gray)
+        {
+            var bmpMod = new BitmapImage();
+            bmpMod.BeginInit();
+            bmpMod.StreamSource = new MemoryStream(ImageToByte(gray));
             bmpMod.EndInit();
             imgOriginal.Source = bmpMod;
         }
@@ -252,6 +283,7 @@ namespace OpenCvTests
             txtPerspective.Text = _perspective.ToString();
             txtNumCards.Text = _numcards.ToString();
             _capture.Start();
+            chkWebCam.DataContext = this;
         }
 
         private void txtPerspective_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
@@ -265,5 +297,15 @@ namespace OpenCvTests
             if (int.TryParse(txtNumCards.Text, NumberStyles.Integer, new NumberFormatInfo(), out _numcards))
                 ProcessImage();
         }
-    }
+
+        private void chkWebCam_Checked(object sender, RoutedEventArgs e)
+        {
+            UseWebCam = chkWebCam.IsChecked != null && chkWebCam.IsChecked.Value;
+        }
+
+        private void chkWebCam_Unchecked(object sender, RoutedEventArgs e)
+        {
+            UseWebCam = chkWebCam.IsChecked != null && chkWebCam.IsChecked.Value;
+        }
+}
 }
