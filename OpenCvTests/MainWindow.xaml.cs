@@ -160,7 +160,7 @@ namespace OpenCvTests
 
             for(var i = 0; i < old.Length; i++)
             {
-                Debug.Draw($"{i.ToString()}", convertToPoints(old)[i], FontFace.HersheyPlain, 4, new Bgr(0, 0, 255), 2);
+                Debug.Draw($"{i}", convertToPoints(old)[i], FontFace.HersheyPlain, 3, new Bgr(0, 0, 0), 2);
             }
             
             Debug.DrawPolyline(convertToPoints(old), true, new Bgr(0,0,0),3);
