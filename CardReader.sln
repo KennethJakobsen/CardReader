@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EmguCvTests", "OpenCvTests\EmguCvTests.csproj", "{6A8430D4-7999-4324-883D-13819B7968A5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardReader.EmguCvTests", "OpenCvTests\CardReader.EmguCvTests.csproj", "{6A8430D4-7999-4324-883D-13819B7968A5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardReader.Emgu.Demo", "CardReader.Emgu.Demo\CardReader.Emgu.Demo.csproj", "{FEAF31BF-E4FD-45D1-A421-4D3150D9C4C7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{6A8430D4-7999-4324-883D-13819B7968A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6A8430D4-7999-4324-883D-13819B7968A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6A8430D4-7999-4324-883D-13819B7968A5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FEAF31BF-E4FD-45D1-A421-4D3150D9C4C7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FEAF31BF-E4FD-45D1-A421-4D3150D9C4C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FEAF31BF-E4FD-45D1-A421-4D3150D9C4C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FEAF31BF-E4FD-45D1-A421-4D3150D9C4C7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

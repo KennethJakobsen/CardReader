@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:EmguCvTests"
         xmlns:Properties="clr-namespace:EmguCvTests.Properties" x:Class="EmguCvTests.MainWindow"
         mc:Ignorable="d"
-        Title="MainWindow" Height="479.258" Width="861.719" Loaded="Window_Loaded">
+        Title="MainWindow" Height="479.258" Width="1011.487" Loaded="Window_Loaded">
     <Grid>
         <Button x:Name="Load_Image" Content="Load Image" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="75" Click="Load_Image_Click"/>
         <TabControl x:Name="tabControl" Margin="10,35,10,10">
@@ -46,7 +46,7 @@
         <Label x:Name="label_Copy2" Content="Perspective" Margin="0,7,197,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="71"/>
         <TextBox x:Name="txtNumCards" Height="20" Margin="170,10,0,0" TextWrapping="Wrap" VerticalAlignment="Top" TextChanged="txtNumCards_TextChanged" HorizontalAlignment="Left" Width="30"  />
         <Label x:Name="label_Copy3" Content="Num cards" Margin="99,6,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" Width="71"/>
-        <CheckBox x:Name="chkWebCam" Content="Use webcam" HorizontalAlignment="Left" Margin="218,12,0,0" VerticalAlignment="Top" IsChecked="{Binding UseWebCam}" Checked="chkWebCam_Checked" Unchecked="chkWebCam_Unchecked">
+        <CheckBox x:Name="chkWebCam" Content="Use webcam" HorizontalAlignment="Left" Margin="214,12,0,0" VerticalAlignment="Top" IsChecked="{Binding UseWebCam}" Checked="chkWebCam_Checked" Unchecked="chkWebCam_Unchecked">
             
         </CheckBox>
 
