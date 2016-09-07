@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardReader.EmguCvTests", "O
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CardReader.Emgu.Demo", "CardReader.Emgu.Demo\CardReader.Emgu.Demo.csproj", "{FEAF31BF-E4FD-45D1-A421-4D3150D9C4C7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KSJ.CardReader.Core", "KSJ.CardReader.Core\KSJ.CardReader.Core.csproj", "{919AC3C8-627D-42F8-AEAE-FBB448C87688}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{FEAF31BF-E4FD-45D1-A421-4D3150D9C4C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FEAF31BF-E4FD-45D1-A421-4D3150D9C4C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FEAF31BF-E4FD-45D1-A421-4D3150D9C4C7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{919AC3C8-627D-42F8-AEAE-FBB448C87688}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{919AC3C8-627D-42F8-AEAE-FBB448C87688}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{919AC3C8-627D-42F8-AEAE-FBB448C87688}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{919AC3C8-627D-42F8-AEAE-FBB448C87688}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

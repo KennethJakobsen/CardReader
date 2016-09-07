@@ -20,6 +20,8 @@ using Emgu.CV.ML.MlEnum;
 using Emgu.CV.OCR;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
+using KSJ.CardReader.Core.Detection;
+using KSJ.CardReader.Core.Helpers;
 using Size = System.Drawing.Size;
 
 namespace EmguCvTests
@@ -36,6 +38,7 @@ namespace EmguCvTests
         FilterInfoCollection WebCams; //List containing all the camera available
         #endregion
 
+
         private string _localPath = string.Empty;
         private int _blur = 1;
         private int _threshMin = 175;
@@ -47,19 +50,17 @@ namespace EmguCvTests
         public Image<Bgr, byte> Debug;
         private int cardCount = 0;
         private Tesseract _ocr;
-        public class VectorOrder
-        {
-            public int ListIndex { get; set; }
-            public double Size { get; set; }
-            public VectorOfPoint Vector { get; set; }
-            public Rectangle Box { get; set; }
-        }
+        private CardExtractor _extractor;
+        private MaterialHelper _matHlp;
+
         public MainWindow()
         {
             InitializeComponent();
             WebCams = new FilterInfoCollection(FilterCategory.VideoInputDevice);
             _capture = new Capture(CameraDevice);
             _capture.ImageGrabbed += ProcessFrame;
+            _extractor = new CardExtractor();
+            _matHlp = new MaterialHelper();
 
         }
 
@@ -70,8 +71,8 @@ namespace EmguCvTests
             using (var mat = new Mat())
             {
                 _capture.Retrieve(mat);
-                ProcessImage(mat);
-                //BindOriginal(mat);
+                _extractor.ProcessImage(mat);
+                BindAll();
             }
         }
 
@@ -83,7 +84,7 @@ namespace EmguCvTests
                 var dlg = new OpenFileDialog();
                 if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                     _localPath = dlg.FileName;
-                ProcessImage();
+                _extractor.ProcessImage(CvInvoke.Imread(_localPath, LoadImageType.AnyColor));
             }
             else
             {
@@ -91,203 +92,28 @@ namespace EmguCvTests
                 using (var mat = new Mat())
                 {
                     _capture.Retrieve(mat);
-                    ProcessImage(mat);
+                    _extractor.ProcessImage(mat);
                 }
             }
+            BindAll();
         }
 
-        private void ProcessImage(Mat mat = null)
+        private void BindAll()
         {
-            if (_localPath != string.Empty && !UseWebCam)
-            {
-                _img = CvInvoke.Imread(_localPath, LoadImageType.AnyColor);
-                Debug = new Image<Bgr, byte>(_img.Bitmap);
-                BindOriginal(_img);
-            }
-            else
-            {
-                if (mat != null)
-                {
-                    _img = mat;
-                    Debug = new Image<Bgr, byte>(_img.Bitmap);
-                    BindOriginal(mat);
-                }
-                else
-                {
-                    return;
-                }
-            }
-
-
-            VectorOfVectorOfPoint contours;
-            Mat matContours;
-            _img = PreProcess(_img, out contours, out matContours);
-            var lst = new List<Mat>();
-            var potentialCards = listCountours(contours)
-                .Where(c => IsRectangle(c.Vector))
-                .OrderByDescending(c => c.Size);
-            var largestCard = potentialCards.FirstOrDefault();
-
-            var cards = potentialCards
-                    .Where(c => IsAcceptableSize(c.Size, 15, largestCard.Size))
-                    //.Take(52)
-                    .OrderBy(c => c.Box.X)
-                    .ThenBy(c => c.Box.Y)
-                    .ToArray();
-            _numcards = cards.Length;
-            this.Dispatcher.Invoke((Action) (() =>
-            {
-                txtNumCards.Text = _numcards.ToString();
-            }));
-
-            for (var i = 0; i < cards.Length; i++) 
-            {
-                cardCount = i;
-                var card = RectifyCardFromWarpedPerspective(cards[i], _img);
-                
-                
-                var contour = new VectorOfVectorOfPoint();
-                var matC = new Mat();
-                PreProcess(card, out contour, out matC);
-                lst.Add(matC);
-                //var od = new LicensePlateDetector(@"c:/cardreader/tessdata/");
-                //var lstRegions = new List<IInputOutputArray>();
-                //var lstFiltered = new List<IInputOutputArray>();
-                //var bounds = new List<RotatedRect>();
-                //var result =  od.DetectLicensePlate(contour, lstRegions,  lstFiltered, bounds);
-
-                CvInvoke.DrawContours(matContours, contours, cards[i].ListIndex, new MCvScalar(0, 255, 0), 3);
-
-            }
-
-            //var trainCards = new VectorOfVectorOfPoint(cards.Select(c => c.Vector).ToArray());
-            //MachineLearningTrain(trainCards);
-            cardCount = 0;
-            if (Debug != null)
-                BindOriginal(Debug.ToJpegData(100));
-            else
-                BindOriginal(_img);
-            BindList(lst);
-            BindModified(matContours);
-        }
-
-        private bool IsAcceptableSize(double size, int percentageDiff, double max)
-        {
-            return ((max / 100) * (100 - percentageDiff)) <= size;
-        }
-
-        private bool IsRectangle(VectorOfPoint c)
-        {
-            var approxContour = new VectorOfPoint();
-            CvInvoke.ApproxPolyDP(c, approxContour, CvInvoke.ArcLength(c, true) * 0.05, true);
-            var area = CvInvoke.ContourArea(approxContour, false);
-            if (!(area > 250)) return false;
-            return approxContour.Size == 4;
-        }
-
-        private Mat PreProcess(Mat img, out VectorOfVectorOfPoint contours, out Mat matContours)
-        {
-
-            var gray = GetMat(img);
-            CvInvoke.CvtColor(img, gray, ColorConversion.Bgr2Gray);
-            var blur = GetMat(img);
-            CvInvoke.GaussianBlur(gray, blur, new Size(_blur, _blur), 100);
-            var threshold = GetMat(img);
-            CvInvoke.Threshold(blur, threshold, _threshMin, _threshMax, ThresholdType.Binary);
-            var eqHist = GetMat(img);
-            CvInvoke.EqualizeHist(threshold, eqHist);
-            contours = new VectorOfVectorOfPoint();
-            CvInvoke.FindContours(threshold, contours, null, RetrType.Tree, ChainApproxMethod.ChainApproxSimple);
-            matContours = GetMat(img);
-            CvInvoke.DrawContours(matContours, contours, -1, new MCvScalar(200, 200, 200));
-
-
-            return img;
-        }
-
-        private Mat RectifyCardFromWarpedPerspective(VectorOrder c, Mat img)
-        {
-            _ocr = new Tesseract();
-            var card = c.Vector;
-            var perimeter = CvInvoke.ArcLength(card, true);
-            var polyDp = new VectorOfPointF();
-            CvInvoke.ApproxPolyDP(card, polyDp, _perspective * perimeter, true);
-            var rectangle = CvInvoke.MinAreaRect(card);
-            var box = CvInvoke.BoxPoints(rectangle);
-            var points = new PointF[4];
-            points[0] = new PointF(0, 0);
-            points[1] = new PointF(499, 0);
-            points[2] = new PointF(499, 750);
-            points[3] = new PointF(0, 750);
-
-            var pArr = polyDp.ToArray();
-            var old = new PointF[4];
-            old[0] = pArr.OrderBy(p => p.X + p.Y).First();
-            old[2] = pArr.OrderByDescending(p => p.X + p.Y).First();
-            old[3] = pArr.OrderBy(p => p.X - p.Y).First();
-            old[1] = pArr.OrderByDescending(p => p.X - p.Y).First();
-
-            if (Debug != null)
-            {
-                Debug.Draw(cardCount.ToString(), convertToPoints(old)[3], FontFace.HersheyPlain, 5, new Bgr(0, 0, 0), 8);
-                Debug.DrawPolyline(convertToPoints(old), true, new Bgr(0, 0, 0), 3);
-            }
-
-            var transform = CvInvoke.GetPerspectiveTransform(old, points);
-
-            var warp = GetMat(img);
-            CvInvoke.WarpPerspective(img, warp, transform, new Size(499, 750));
-            return warp;
-        }
-
-        private List<VectorOrder> listCountours(VectorOfVectorOfPoint contours)
-        {
-            var lst = new List<MainWindow.VectorOrder>();
-            for (var i = 0; i < contours.Size; i++)
-            {
-
-                lst.Add(new MainWindow.VectorOrder
-                {
-                    Size = CvInvoke.ContourArea(contours[i]),
-                    ListIndex = i,
-                    Vector = contours[i],
-                    Box = CvInvoke.BoundingRectangle(contours[i])
-                });
-            }
-            return lst;
-        }
-
-        private System.Drawing.Point[] convertToPoints(PointF[] old)
-        {
-            var p = new System.Drawing.Point[old.Length];
-            for (var i = 0; i < old.Length; i++)
-            {
-                p[i] = new System.Drawing.Point(Convert.ToInt32(old[i].X), Convert.ToInt32(old[i].Y));
-            }
-            return p;
-        }
-        private static Mat GetMat(Mat img)
-        {
-            return new Mat(img.Size, img.Depth, img.NumberOfChannels);
-        }
-
-        private void BindOriginal(string localPath)
-        {
-            this.Dispatcher.Invoke((Action)(() =>
-            {
-                var bmp =
-                new BitmapImage(
-                    new Uri(localPath));
-                imgOriginal.Source = bmp;
-            }));
+            BindModified(_extractor.ProcessedImage);
+            BindOriginal(_extractor.ModifiedImage?.ToJpegData(100));
+            BindList(_extractor.Cards);
         }
 
 
         private void BindModified(Mat gray)
         {
+            if (gray == null) return;
             this.Dispatcher.Invoke((Action)(() =>
            {
-               var m = new MemoryStream(ImageToByte(gray));
+               var bytes = _matHlp.MatToByte(gray);
+               if (bytes == null) return;
+               var m = new MemoryStream(bytes);
 
                var bmpMod = new BitmapImage();
                bmpMod.BeginInit();
@@ -300,18 +126,34 @@ namespace EmguCvTests
 
         private void BindOriginal(Mat gray)
         {
+            if (gray == null) return;
             this.Dispatcher.Invoke((Action)(() =>
             {
 
                 var bmpMod = new BitmapImage();
+                var bytes = _matHlp.MatToByte(gray);
+                if (bytes == null) return;
                 bmpMod.BeginInit();
-                bmpMod.StreamSource = new MemoryStream(ImageToByte(gray));
+                bmpMod.StreamSource = new MemoryStream(bytes);
                 bmpMod.EndInit();
                 imgOriginal.Source = bmpMod;
 
             }));
         }
+        private void BindOriginal(byte[] img)
+        {
+            if (img == null) return;
+            this.Dispatcher.Invoke((Action)(() =>
+            {
 
+                var bmpMod = new BitmapImage();
+                bmpMod.BeginInit();
+                bmpMod.StreamSource = new MemoryStream(img);
+                bmpMod.EndInit();
+                imgOriginal.Source = bmpMod;
+
+            }));
+        }
         public class PlayingCard
         {
             public enum CardColor
@@ -397,31 +239,21 @@ namespace EmguCvTests
             var classifier = new NormalBayesClassifier();
             classifier.Train(td);
         }
-        private void BindOriginal(byte[] img)
-        {
-            this.Dispatcher.Invoke((Action)(() =>
-           {
-
-               var bmpMod = new BitmapImage();
-               bmpMod.BeginInit();
-               bmpMod.StreamSource = new MemoryStream(img);
-               bmpMod.EndInit();
-               imgOriginal.Source = bmpMod;
-
-           }));
-        }
-
+       
         private void BindList(IEnumerable<Mat> materials)
         {
+            var mats = materials?.ToArray();
+            if (mats == null || !mats.Any()) return;
             this.Dispatcher.Invoke((Action)(() =>
            {
                var lst = new ObservableCollection<ImageSource>();
-               foreach (var mat in materials)
+               foreach (var mat in mats)
                {
-
+                   var bytes = _matHlp.MatToByte(mat);
+                   if (bytes == null) continue;
                    var bmp = new BitmapImage();
                    bmp.BeginInit();
-                   bmp.StreamSource = new MemoryStream(ImageToByte(mat));
+                   bmp.StreamSource = new MemoryStream(bytes);
                    bmp.EndInit();
                    lst.Add(bmp);
 
@@ -430,35 +262,35 @@ namespace EmguCvTests
                lstCards.ItemsSource = lst;
            }));
         }
-        public static byte[] ImageToByte(Mat img)
-        {
-            return img.ToImage<Bgr, byte>().ToJpegData(100);
-            var converter = new ImageConverter();
-            return (byte[])converter.ConvertTo(img, typeof(byte[]));
-        }
-        public static byte[] ImageToByte(Image img)
-        {
-            var converter = new ImageConverter();
-            return (byte[])converter.ConvertTo(img, typeof(byte[]));
-        }
+       
+      
 
         private void txtBlur_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
         {
-            if (int.TryParse(txtBlur.Text, NumberStyles.Integer, new NumberFormatInfo(), out _blur) && _blur % 2 != 0)
-                ProcessImage();
+            if (int.TryParse(txtBlur.Text, NumberStyles.Integer, new NumberFormatInfo(), out _blur) && _blur%2 != 0)
+            {
+                _extractor.ProcessImage(_extractor.OriginalImage);
+                BindAll();
+            }
 
         }
 
         private void txtTMin_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
             if (int.TryParse(txtTMin.Text, NumberStyles.Integer, new NumberFormatInfo(), out _threshMin))
-                ProcessImage();
+            {
+                _extractor.ProcessImage(_extractor.OriginalImage);
+                BindAll();
+            }
         }
 
         private void txtTMax_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
             if (int.TryParse(txtTMax.Text, NumberStyles.Integer, new NumberFormatInfo(), out _threshMax))
-                ProcessImage();
+            {
+                _extractor.ProcessImage(_extractor.OriginalImage);
+                BindAll();
+            }
         }
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
@@ -475,13 +307,19 @@ namespace EmguCvTests
         private void txtPerspective_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
             if (double.TryParse(txtPerspective.Text, NumberStyles.Integer, new NumberFormatInfo(), out _perspective))
-                ProcessImage();
+            {
+                _extractor.ProcessImage(_extractor.OriginalImage);
+                BindAll();
+            }
         }
 
         private void txtNumCards_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
             if (int.TryParse(txtNumCards.Text, NumberStyles.Integer, new NumberFormatInfo(), out _numcards))
-                ProcessImage();
+            {
+                _extractor.ProcessImage(_extractor.OriginalImage);
+                BindAll();
+            }
         }
 
         private void chkWebCam_Checked(object sender, RoutedEventArgs e)
