@@ -56,7 +56,7 @@ namespace KSJ.CardReader.Core.Detection
             var cards = _cardHelper.GetCards(potentialCards, largestContour).ToArray();
             NumberOfCardsDetected = cards.Count();
 
-            for (int index = 0; index < cards.Length; index++)
+            for (var index = 0; index < cards.Length; index++)
             {
                 var c = cards[index];
                 var card = _cardRectifier.RectifyCardFromWarpedPerspective(c, OriginalImage, index.ToString(),modifiedImage: ModifiedImage);
