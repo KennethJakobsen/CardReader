@@ -48,7 +48,7 @@ namespace KSJ.CardReader.Core.Processing
 
             var transform = CvInvoke.GetPerspectiveTransform(old, points);
 
-            var warp = _matHlp.GetMat(img);
+            var warp = new Mat();
             CvInvoke.WarpPerspective(img, warp, transform, new Size(499, 750));
             return warp;
         }

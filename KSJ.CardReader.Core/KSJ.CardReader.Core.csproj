@@ -75,13 +75,13 @@
     <Compile Include="Helpers\CardHelper.cs" />
     <Compile Include="Helpers\GeometryHelper.cs" />
     <Compile Include="Helpers\MaterialHelper.cs" />
+    <Compile Include="MachineLearning\PlayingCard.cs" />
+    <Compile Include="MachineLearning\PlayingCardCollection.cs" />
     <Compile Include="Processing\CardRectifier.cs" />
     <Compile Include="Processing\ImagePreProcessor.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="MachineLearning\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <None Include="OpenTK.dll.config" />
     <None Include="packages.config" />

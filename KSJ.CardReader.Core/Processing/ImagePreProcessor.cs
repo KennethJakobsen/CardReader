@@ -42,6 +42,7 @@ namespace KSJ.CardReader.Core.Processing
 
         public Image<Bgr, byte> Crop(Mat matC, Rectangle mask)
         {
+            if (matC?.Width == 0) return null;
             if(mask == Rectangle.Empty)
                 mask = new Rectangle(5, 20, 60, 180);
             var cropped = matC.ToImage<Bgr, byte>();

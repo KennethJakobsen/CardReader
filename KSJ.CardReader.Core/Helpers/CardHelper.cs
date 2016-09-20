@@ -1,6 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using Emgu.CV;
+using Emgu.CV.Structure;
 using Emgu.CV.Util;
 using KSJ.CardReader.Core.Detection;
 
@@ -20,7 +23,23 @@ namespace KSJ.CardReader.Core.Helpers
             CvInvoke.ApproxPolyDP(c, approxContour, CvInvoke.ArcLength(c, true) * 0.05, true);
             var area = CvInvoke.ContourArea(approxContour, false);
             if (!(area > 250)) return false;
-            return approxContour.Size == 4;
+            if(approxContour.Size != 4) return false;
+            var isRectangle = true;
+            var pts = approxContour.ToArray();
+            var edges = PointCollection.PolyLine(pts, true);
+            //using edges i found coordinates.
+            for (int i = 0; i < edges.Length; i++)
+            {
+                double angle = Math.Abs(
+                    edges[(i + 1) % edges.Length].GetExteriorAngleDegree(edges[i]));
+                if (angle < 75 || angle > 105)
+                {
+                    isRectangle = false;
+                    break;
+                }
+                
+            }
+            return isRectangle;
         }
 
         public IOrderedEnumerable<VectorOrder> GetPotentialCards(List<VectorOrder> contours)

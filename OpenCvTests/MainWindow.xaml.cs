@@ -1,13 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Threading;
 using System.Windows;
 using System.Windows.Forms;
 using System.Windows.Media;
@@ -19,7 +15,6 @@ using Emgu.CV.ML;
 using Emgu.CV.ML.MlEnum;
 using Emgu.CV.OCR;
 using Emgu.CV.Structure;
-using Emgu.CV.Util;
 using KSJ.CardReader.Core.Detection;
 using KSJ.CardReader.Core.Helpers;
 using Size = System.Drawing.Size;
@@ -34,7 +29,7 @@ namespace EmguCvTests
         #region Camera Capture Variables
         private Capture _capture = null; //Camera
         private bool _captureInProgress = false; //Variable to track camera state
-        int CameraDevice = 0; //Variable to track camera device selected
+        int CameraDevice = 1; //Variable to track camera device selected
         FilterInfoCollection WebCams; //List containing all the camera available
         #endregion
 
@@ -61,6 +56,16 @@ namespace EmguCvTests
             _capture.ImageGrabbed += ProcessFrame;
             _extractor = new CardExtractor();
             _matHlp = new MaterialHelper();
+            _extractor.ImageProcessed += _extractor_ImageProcessed;
+        }
+
+        private void _extractor_ImageProcessed(object sender, EventArgs e)
+        {
+            this.Dispatcher.Invoke((Action)(() =>
+            {
+                txtNumCards.Text = _extractor.NumberOfCardsDetected.ToString();
+                BindAll();
+            }));
 
         }
 
@@ -72,7 +77,6 @@ namespace EmguCvTests
             {
                 _capture.Retrieve(mat);
                 _extractor.ProcessImage(mat);
-                BindAll();
             }
         }
 
@@ -83,19 +87,23 @@ namespace EmguCvTests
                 _capture.Stop();
                 var dlg = new OpenFileDialog();
                 if (dlg.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                {
                     _localPath = dlg.FileName;
-                _extractor.ProcessImage(CvInvoke.Imread(_localPath, LoadImageType.AnyColor));
+                    _extractor.ProcessImage(CvInvoke.Imread(_localPath, LoadImageType.AnyColor));
+                }
             }
             else
             {
                 _capture.Start();
                 using (var mat = new Mat())
                 {
-                    _capture.Retrieve(mat);
-                    _extractor.ProcessImage(mat);
+                    var res = _capture.Retrieve(mat);
+                    var cMat = new Mat();
+                    mat.CopyTo(cMat);
+                    if (res)
+                        _extractor.ProcessImage(cMat);
                 }
             }
-            BindAll();
         }
 
         private void BindAll()
@@ -124,22 +132,6 @@ namespace EmguCvTests
            }));
         }
 
-        private void BindOriginal(Mat gray)
-        {
-            if (gray == null) return;
-            this.Dispatcher.Invoke((Action)(() =>
-            {
-
-                var bmpMod = new BitmapImage();
-                var bytes = _matHlp.MatToByte(gray);
-                if (bytes == null) return;
-                bmpMod.BeginInit();
-                bmpMod.StreamSource = new MemoryStream(bytes);
-                bmpMod.EndInit();
-                imgOriginal.Source = bmpMod;
-
-            }));
-        }
         private void BindOriginal(byte[] img)
         {
             if (img == null) return;
@@ -154,19 +146,7 @@ namespace EmguCvTests
 
             }));
         }
-        public class PlayingCard
-        {
-            public enum CardColor
-            {
-                Spades,
-                Clubs,
-                Hearts,
-                Diamonds
-            }
-
-            public CardColor Color { get; set; }
-            public int Number { get; set; }
-        }
+       
 
         private Matrix<int> GetTrainingClasses()
         {
@@ -234,12 +214,11 @@ namespace EmguCvTests
         }
         private void MachineLearningTrain(IInputArray cards)
         {
-
             var td = new TrainData(cards, DataLayoutType.RowSample, GetTrainingClasses());
             var classifier = new NormalBayesClassifier();
             classifier.Train(td);
         }
-       
+
         private void BindList(IEnumerable<Mat> materials)
         {
             var mats = materials?.ToArray();
@@ -262,15 +241,15 @@ namespace EmguCvTests
                lstCards.ItemsSource = lst;
            }));
         }
-       
-      
+
+
 
         private void txtBlur_KeyUp(object sender, System.Windows.Input.KeyEventArgs e)
         {
-            if (int.TryParse(txtBlur.Text, NumberStyles.Integer, new NumberFormatInfo(), out _blur) && _blur%2 != 0)
+            if (int.TryParse(txtBlur.Text, NumberStyles.Integer, new NumberFormatInfo(), out _blur) && _blur % 2 != 0)
             {
+                _extractor.Blur = _blur;
                 _extractor.ProcessImage(_extractor.OriginalImage);
-                BindAll();
             }
 
         }
@@ -279,8 +258,8 @@ namespace EmguCvTests
         {
             if (int.TryParse(txtTMin.Text, NumberStyles.Integer, new NumberFormatInfo(), out _threshMin))
             {
+                _extractor.MinimumThreshHold = _threshMin;
                 _extractor.ProcessImage(_extractor.OriginalImage);
-                BindAll();
             }
         }
 
@@ -288,8 +267,8 @@ namespace EmguCvTests
         {
             if (int.TryParse(txtTMax.Text, NumberStyles.Integer, new NumberFormatInfo(), out _threshMax))
             {
+                _extractor.MaximumThreshHold = _threshMax;
                 _extractor.ProcessImage(_extractor.OriginalImage);
-                BindAll();
             }
         }
 
@@ -300,7 +279,7 @@ namespace EmguCvTests
             txtBlur.Text = _blur.ToString();
             txtPerspective.Text = _perspective.ToString();
             txtNumCards.Text = _numcards.ToString();
-            
+
             chkWebCam.DataContext = this;
         }
 
@@ -309,7 +288,6 @@ namespace EmguCvTests
             if (double.TryParse(txtPerspective.Text, NumberStyles.Integer, new NumberFormatInfo(), out _perspective))
             {
                 _extractor.ProcessImage(_extractor.OriginalImage);
-                BindAll();
             }
         }
 
@@ -318,7 +296,6 @@ namespace EmguCvTests
             if (int.TryParse(txtNumCards.Text, NumberStyles.Integer, new NumberFormatInfo(), out _numcards))
             {
                 _extractor.ProcessImage(_extractor.OriginalImage);
-                BindAll();
             }
         }
 
@@ -330,6 +307,12 @@ namespace EmguCvTests
         private void chkWebCam_Unchecked(object sender, RoutedEventArgs e)
         {
             UseWebCam = chkWebCam.IsChecked != null && chkWebCam.IsChecked.Value;
+        }
+
+        private void button_Click(object sender, RoutedEventArgs e)
+        {
+            var train = new Training();
+            train.Show();
         }
     }
 }
