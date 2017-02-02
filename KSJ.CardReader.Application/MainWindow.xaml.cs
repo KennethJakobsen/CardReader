@@ -19,7 +19,7 @@ using KSJ.CardReader.Core.Detection;
 using KSJ.CardReader.Core.Helpers;
 using Size = System.Drawing.Size;
 
-namespace EmguCvTests
+namespace KSJ.CardReader.Application
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml

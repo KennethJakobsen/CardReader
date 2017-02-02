@@ -2,9 +2,9 @@
 using System.Runtime.CompilerServices;
 using System.Windows.Media.Imaging;
 using Emgu.CV;
-using EmguCvTests.Annotations;
+using KSJ.CardReader.Application.Annotations;
 
-namespace EmguCvTests.ViewModel
+namespace KSJ.CardReader.Application.ViewModel
 {
 
     public class TrainingCardViewModel : INotifyPropertyChanged

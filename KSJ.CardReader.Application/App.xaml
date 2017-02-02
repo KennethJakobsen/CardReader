@@ -1,7 +1,7 @@
-﻿<Application x:Class="EmguCvTests.App"
+﻿<Application x:Class="KSJ.CardReader.Application.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:EmguCvTests"
+             xmlns:local="clr-namespace:KSJ.CardReader.Application"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
          

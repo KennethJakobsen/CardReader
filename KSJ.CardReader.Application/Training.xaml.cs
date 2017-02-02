@@ -10,12 +10,12 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
-using EmguCvTests.ViewModel;
+using KSJ.CardReader.Application.ViewModel;
 using KSJ.CardReader.Core.Detection;
 using KSJ.CardReader.Core.Helpers;
 using KSJ.CardReader.Core.MachineLearning;
 
-namespace EmguCvTests
+namespace KSJ.CardReader.Application
 {
     /// <summary>
     /// Interaction logic for Training.xaml

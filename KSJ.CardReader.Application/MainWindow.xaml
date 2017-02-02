@@ -3,8 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:EmguCvTests"
-        xmlns:Properties="clr-namespace:EmguCvTests.Properties" x:Class="EmguCvTests.MainWindow"
+        xmlns:local="clr-namespace:KSJ.CardReader.Application"
+        xmlns:Properties="clr-namespace:KSJ.CardReader.Application.Properties" x:Class="KSJ.CardReader.Application.MainWindow"
         mc:Ignorable="d"
         Title="MainWindow" Height="479.258" Width="1011.487" Loaded="Window_Loaded">
     <Grid>

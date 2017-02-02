@@ -9,7 +9,7 @@ using Emgu.CV.Structure;
 using Emgu.CV.Util;
 using Emgu.Util;
 
-namespace EmguCvTests
+namespace KSJ.CardReader.Application
 { /// <summary>
   /// A simple license plate detector
   /// </summary>
